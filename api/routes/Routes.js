@@ -7,6 +7,9 @@ module.exports = function (app) {
   // Route for listing all talents
   app.get("/talents", talentController.listAllTalents);
 
+  // Route for compare language
+  app.post("/requirement", talentController.languageCompare);
+
   // Route for creating new talent
   app.post("/talents", talentController.createNewTalent);
 
