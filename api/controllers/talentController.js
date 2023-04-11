@@ -20,7 +20,7 @@ function disSanchez(bp1, bp2) {
   let adb = bp1.filter(x => !bp2.includes(x));
   let bda = bp2.filter(x => !bp1.includes(x));
   let anb = bp1.filter(x => bp2.includes(x));
-  console.log(`\n Calculated disSanchez(${bp1.join(', ')}, ${bp2.join(', ')}): (${adb.join(', ')}) ∪ (${bda.join(', ')}) / (${adb.join(', ')}) ∪ (${bda.join(', ')}) ∪ (${anb.join(', ')})`);
+  console.log(`\n Calculated disSanchez`);
   return Math.log2(1+(adb.length+bda.length)/(adb.length+bda.length+anb.length));
 }
 
@@ -43,21 +43,50 @@ exports.languageCompare = async (req, res) => {
 
       const programming = talent.profile.programming;
       const paradigms = await getParadigms(programming);
-      const temp = [];
 
+      const temp = {};
       for (let i = 0; i < req.body.language.length; i++) {
         if (typeof req.body.language[i] !== 'string') {
           console.warn(`Skipping language ${req.body.language[i]} because it is not a string`);
           continue;
         }
 
-        const langParadigms = await getParadigms([req.body.language[i]]);
-        const talentScore = disSanchez(paradigms, langParadigms);
-        temp.push(talentScore);
+        try {
+          const langParadigms = await getParadigms([req.body.language[i]]);
+          const langKey = req.body.language[i].toLowerCase();
+          if (!temp[langKey]) {
+            temp[langKey] = [];
+          }
+          for (let j = 0; j < programming.length; j++) {
+            if (typeof programming[j] !== 'string') {
+              console.warn(`Skipping language ${programming[j]} because it is not a string`);
+              continue;
+            }
+
+            const talentScore = disSanchez(langParadigms, await getParadigms([programming[j]]));
+            temp[langKey].push({language: programming[j], score: talentScore});
+          }
+        } catch (error) {
+          console.warn(`Skipping language ${req.body.language[i]} because its paradigms could not be found`);
+        }
       }
 
-      const averageScore = temp.length > 0 ? temp.reduce((a, b) => a + b, 0) / temp.length : 0;
-      scores.push({ name: talent.profile.name, scores: temp, average: averageScore });
+      const scoresByLanguage = {};
+      let rataRataTotal = 0;
+      for (let i = 0; i < req.body.language.length; i++) {
+        const langKey = req.body.language[i].toLowerCase();
+        if (!temp[langKey]) {
+          console.warn(`Skipping language ${req.body.language[i]} because there are no talents with that language`);
+          continue;
+        }
+        scoresByLanguage[langKey] = temp[langKey];
+        const rataRataScore = temp[langKey].reduce((acc, cur) => acc + cur.score, 0) / temp[langKey].length;
+        scoresByLanguage[`rataRataScore${req.body.language[i]}`] = rataRataScore;
+        rataRataTotal += rataRataScore;
+      }
+      scoresByLanguage.rataRataTotal = rataRataTotal / Object.keys(scoresByLanguage).filter(key => key.startsWith('rataRataScore')).length;
+
+      scores.push({ name: talent.profile.name, languages: scoresByLanguage });
     }
     console.log(`\n Language compare result: ${JSON.stringify(scores, null, 2)}`);
     res.json({ success: true, data: scores });
@@ -66,6 +95,7 @@ exports.languageCompare = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // listAllTalents function - To list all talents
 exports.listAllTalents = async (req, res) => {
@@ -115,17 +145,16 @@ exports.deleteTalent = async (req, res) => {
 
 // createNewLanguage function - To list all talents
 exports.createNewLanguage = async (req, res) => {
-    try {
-      const { name, paradigms } = req.body;
-      const languages = new Talent({ name, paradigms });
-      await languages.save();
-      res.status(201).send(languages);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('Internal Server Error');
-    }
-  };
-
+  try {
+    const { name, paradigms } = req.body;
+    const languages = new Talent({ name, paradigms });
+    await languages.save();
+    res.status(201).send(languages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+};
 
 // listAllLanguages function - To list all talents
 exports.listLanguage = async (req, res) => {
