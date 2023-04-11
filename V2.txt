@@ -1,0 +1,64 @@
+async function getParadigms(languageNames) {
+  const languages = await Language.find({ name: { $in: languageNames } }).exec();
+  const paradigms = new Set();
+  languages.forEach(language => {
+    language.paradigms.forEach(paradigm => paradigms.add(paradigm));
+  });
+  console.log(`\n Paradigms found for languages ${languageNames.join(', ')}: ${Array.from(paradigms).join(', ')}`);
+  return Array.from(paradigms);
+}
+
+function disSanchez(bp1, bp2) {
+  let adb = bp1.filter(x => !bp2.includes(x));
+  let bda = bp2.filter(x => !bp1.includes(x));
+  let anb = bp1.filter(x => bp2.includes(x));
+  console.log(`\n Calculated disSanchez(${bp1.join(', ')}, ${bp2.join(', ')}): (${adb.join(', ')}) ∪ (${bda.join(', ')}) / (${adb.join(', ')}) ∪ (${bda.join(', ')}) ∪ (${anb.join(', ')})`);
+  return Math.log2(1+(adb.length+bda.length)/(adb.length+bda.length+anb.length));
+}
+
+// languageCompare function - to compare programming language
+
+exports.languageCompare = async (req, res) => {
+  try {
+    if (!Array.isArray(req.body.language) || req.body.language.length === 0) {
+      return res.status(400).json({ success: false, message: 'Input must be a non-empty array' });
+    }
+
+    const talents = await Talent.find().exec();
+
+    const scores = [];
+    for (const talent of talents) {
+      if (!talent.profile.programming || !Array.isArray(talent.profile.programming) || talent.profile.programming.length === 0) {
+        console.warn(`Skipping talent ${talent.profile.name} because programming languages array is invalid`);
+        continue;
+      }
+
+      const programming = talent.profile.programming;
+      const paradigms = await getParadigms(programming);
+      const temp = [];
+
+      for (let i = 0; i < req.body.language.length; i++) {
+        if (typeof req.body.language[i] !== 'string') {
+          console.warn(`Skipping language ${req.body.language[i]} because it is not a string`);
+          continue;
+        }
+
+        try {
+          const langParadigms = await getParadigms([req.body.language[i]]);
+          const talentScore = disSanchez(paradigms, langParadigms);
+          temp.push(talentScore);
+        } catch (error) {
+          console.warn(`Skipping language ${req.body.language[i]} because its paradigms could not be found`);
+        }
+      }
+
+      const averageScore = temp.length > 0 ? temp.reduce((a, b) => a + b, 0) / temp.length : 0;
+      scores.push({ name: talent.profile.name, scores: temp, average: averageScore });
+    }
+    console.log(`\n Language compare result: ${JSON.stringify(scores, null, 2)}`);
+    res.json({ success: true, data: scores });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
