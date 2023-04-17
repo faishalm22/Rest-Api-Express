@@ -1,8 +1,11 @@
 const mongoose = require("mongoose");
 
 //Assign MongoDB connection string to Uri and declare options settings
-var uri =
-  "mongodb+srv://fasttowin2002:faishal123@talent.stktx4l.mongodb.net/Talent?retryWrites=true&w=majority";
+// var uri =
+//   "mongodb+srv://fasttowin2002:faishal123@talent.stktx4l.mongodb.net/Talent?retryWrites=true&w=majority";
+
+//db local
+var uri = "mongodb://localhost:27017/Talent"
 
 // Declare a variable named option and assign optional settings
 const options = {
