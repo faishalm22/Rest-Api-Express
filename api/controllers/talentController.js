@@ -42,51 +42,52 @@ exports.languageCompare = async (req, res) => {
       }
 
       const programming = talent.profile.programming;
-      const paradigms = await getParadigms(programming);
+     // const paradigms = await getParadigms(programming);
 
       const temp = {};
-      for (let i = 0; i < req.body.language.length; i++) {
-        if (typeof req.body.language[i] !== 'string') {
-          console.warn(`Skipping language ${req.body.language[i]} because it is not a string`);
+      for (let i = 0; i < programming.length; i++) {
+        if (typeof programming[i] !== 'string') {
+          console.warn(`Skipping language ${programming[i]} because it is not a string`);
           continue;
         }
 
         try {
-          const langParadigms = await getParadigms([req.body.language[i]]);
-          const langKey = req.body.language[i].toLowerCase();
+          const langParadigms = await getParadigms([programming[i]]);
+          const langKey = programming[i].toLowerCase();
           if (!temp[langKey]) {
             temp[langKey] = [];
           }
-          for (let j = 0; j < programming.length; j++) {
-            if (typeof programming[j] !== 'string') {
-              console.warn(`Skipping language ${programming[j]} because it is not a string`);
+          for (let j = 0; j < req.body.language.length; j++) {
+            if (typeof req.body.language[j] !== 'string') {
+              console.warn(`Skipping language ${req.body.language[j]} because it is not a string`);
               continue;
             }
 
-            const talentScore = disSanchez(langParadigms, await getParadigms([programming[j]]));
-            temp[langKey].push({language: programming[j], score: talentScore});
+            const talentScore = disSanchez(langParadigms, await getParadigms([req.body.language[j]]));
+            temp[langKey].push({language: req.body.language[j], score: talentScore});
           }
         } catch (error) {
-          console.warn(`Skipping language ${req.body.language[i]} because its paradigms could not be found`);
+          console.warn(`Skipping language ${programming[i]} because its paradigms could not be found`);
         }
       }
 
-      const scoresByLanguage = {};
+      //const scoresByLanguage = {};
+      let rataRataScore =[];
       let rataRataTotal = 0;
-      for (let i = 0; i < req.body.language.length; i++) {
-        const langKey = req.body.language[i].toLowerCase();
+      for (let i = 0; i < programming.length; i++) {
+        const langKey = programming[i].toLowerCase();
         if (!temp[langKey]) {
-          console.warn(`Skipping language ${req.body.language[i]} because there are no talents with that language`);
+          console.warn(`Skipping language ${programming[i]} because there are no talents with that language`);
           continue;
         }
-        scoresByLanguage[langKey] = temp[langKey];
-        const rataRataScore = temp[langKey].reduce((acc, cur) => acc + cur.score, 0) / temp[langKey].length;
-        scoresByLanguage[`rataRataScore${req.body.language[i]}`] = rataRataScore;
-        rataRataTotal += rataRataScore;
+        //scoresByLanguage[langKey] = temp[langKey];
+        temp[langKey].sort((a, b) => parseFloat(a.score) - parseFloat(b.score));
+        rataRataScore[i] = temp[langKey][0].score;
+        //scoresByLanguage[`scorePalingKecil${programming[i]}`] = rataRataScore;
+        rataRataTotal += rataRataScore[i];
       }
-      scoresByLanguage.rataRataTotal = rataRataTotal / Object.keys(scoresByLanguage).filter(key => key.startsWith('rataRataScore')).length;
-
-      scores.push({ name: talent.profile.name, languages: scoresByLanguage });
+      const hasil = rataRataTotal / rataRataScore.length;
+      scores.push({ name: talent.profile.name, score: hasil });
     }
     console.log(`\n Language compare result: ${JSON.stringify(scores, null, 2)}`);
     res.json({ success: true, data: scores });
