@@ -4,10 +4,10 @@ const Schema = mongoose.Schema;
 
 // Create Schema Instance and add schema propertise
 const programmingLanguageSchema = new Schema({
-    hardskill_id: {
-      type: Schema.Types.ObjectId,
-      ref: 'Hardskill'
-    },
+    // hardskill_id: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: 'Hardskill'
+    // },
     name: {
       type: String,
       required: true,
