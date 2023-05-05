@@ -1,6 +1,7 @@
 // Import Talent Model
 const Talent = require("../models/talentModel");
 const Language = require("../models/languageModel");
+const ProfileMatching = require("../utils/ProfileMatching.js");
 
 // DEFINE CONTROLLER FUNCTIONS
 
@@ -35,12 +36,13 @@ exports.languageCompare = async (req, res) => {
     const talents = await Talent.find().exec();
 
     const scores = [];
+    const profileMatch = {};
     for (const talent of talents) {
       if (!talent.profile.programming || !Array.isArray(talent.profile.programming) || talent.profile.programming.length === 0) {
         console.warn(`Skipping talent ${talent.profile.name} because programming languages array is invalid`);
         continue;
       }
-
+      profileMatch['nama'] = talent.profile.name;
       const programming = talent.profile.programming;
      // const paradigms = await getParadigms(programming);
 
@@ -87,9 +89,19 @@ exports.languageCompare = async (req, res) => {
         rataRataTotal += rataRataScore[i];
       }
       const hasil = rataRataTotal / rataRataScore.length;
+      if(hasil<0.25){
+        let skala = 1;
+      }
+      profileMatch['bahasaPemrograman'] = hasil;
+      let skala_hardskill = ProfileMatching.skalaHardskill(talent.profile.framework, req.body.framework); 
+      profileMatch['framework'] = skala_hardskill;
+      skala_hardskill = ProfileMatching.skalaHardskill(talent.profile.database, req.body.database); 
+      profileMatch['database'] = skala_hardskill;
       scores.push({ name: talent.profile.name, score: hasil });
+      console.log(profileMatch);
+      ProfileMatching.profileMatching(profileMatch);
     }
-    console.log(`\n Language compare result: ${JSON.stringify(scores, null, 2)}`);
+    //console.log(`\n Language compare result: ${JSON.stringify(scores, null, 2)}`);
     res.json({ success: true, data: scores });
   } catch (error) {
     console.error(error);

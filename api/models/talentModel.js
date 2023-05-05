@@ -16,6 +16,30 @@ const profileSchema = new Schema({
     type: [String],
     required: true,
   },
+  framework: {
+    type: [String],
+    required: true,
+  },
+  database: {
+    type: [String],
+    required: true,
+  },
+  gender: {
+    type: String,
+    required: true,
+  },
+  lama_bekerja: {
+    type: Number,
+    required: true,
+  },
+  role: {
+    type: String,
+    required: true,
+  },
+  umur: {
+    type: Number,
+    required: true,
+  },
 });
 
 
