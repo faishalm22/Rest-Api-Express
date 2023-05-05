@@ -1,56 +1,69 @@
-const mongoose = require("mongoose");
-// Declare schema and assign Schema class
-const Schema = mongoose.Schema;
 
 // Create Schema Instance and add schema propertise
-const profileSchema = new Schema({
-  user_id: {
+const mongoose = require('mongoose');
+const Hardskill = require('./hardskillModel');
+const { Schema } = mongoose;
+
+const talentSchema = new Schema({
+  account_id: {
     type: Schema.Types.ObjectId,
-    ref: "Account",
+    ref: 'User'
   },
   name: {
     type: String,
-    required: true,
+    default: ''
   },
-  programming: {
+  date_of_birth: {
+    type: Date,
+    default: null
+  },
+  religion: {
+    type: String,
+    default: ''
+  },
+  place_of_birth: {
+    type: String,
+    default: ''
+  },
+  gender: {
+    type: String,
+    default: ''
+  },
+  health: {
+    type: String,
+    default: ''
+  },
+  language: {
     type: [String],
-    required: true,
+    default: ''
   },
+  company: {
+    type: String,
+    default: ''
+  },
+  status: {
+    type: String,
+    default: ''
+  },
+  courses: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Course'
+  }],
+  projectexp: [{
+    type: Schema.Types.ObjectId,
+    ref: 'ProjectExp'
+  }],
+  education: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Education'
+  }],
+  hardskill: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Hardskill'
+  }]
 });
 
+const Talent = mongoose.model('Talent', talentSchema);
 
-// Create Schema Instance and add schema propertise
-const accountSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  profile: profileSchema,
-});
+module.exports = Talent;
 
-accountSchema.pre("save", async function (next) {
-  if (!this.profile.user_id) {
-    this.profile.user_id = this._id;
-  } else if (this.profile.user_id.toString() !== this._id.toString()) {
-    this.profile.user_id = this._id;
-    await this.model("Account").findByIdAndUpdate(
-      this._id,
-      { "profile.user_id": this._id },
-      { new: true }
-    );
-  }
-  next();
-});
-
-// create and export model
-const Account = mongoose.model("Account", accountSchema);
-
-module.exports = Account;
